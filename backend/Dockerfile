@@ -1,45 +1,76 @@
-FROM python:3.10
+# syntax=docker/dockerfile:1.7
 
-ENV PYTHONUNBUFFERED=1
+# ==============================================================================
+# Stage 1: base — общий слой с uv и переменными окружения
+# ==============================================================================
+FROM python:3.10-slim AS base
 
-# Install uv
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PATH="/app/.venv/bin:$PATH"
+
 COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
 
-# Compile bytecode
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
-ENV UV_COMPILE_BYTECODE=1
-
-# uv Cache
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#caching
-ENV UV_LINK_MODE=copy
+# ==============================================================================
+# Stage 2: builder — установка зависимостей и сборка проекта
+# ==============================================================================
+FROM base AS builder
 
 WORKDIR /app/
 
-# Place executables in the environment at the front of the path
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
-ENV PATH="/app/.venv/bin:$PATH"
+# Сначала только файлы для разрешения зависимостей — слой кешируется
+COPY pyproject.toml ./
 
-# Install dependencies
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+# Устанавливаем только зависимости (без самого пакета)
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-workspace --package app
+    uv sync --no-install-workspace --no-dev --package app
 
-COPY ./backend/scripts /app/backend/scripts
+# Копируем исходный код
+COPY alembic.ini ./
+COPY app/ ./app/
+COPY scripts/ ./scripts/
 
-COPY ./backend/pyproject.toml ./backend/alembic.ini /app/backend/
+# ✅ Копируем entrypoint на стадии builder, чтобы он попал в финальный образ
+COPY scripts/entrypoint.sh ./scripts/entrypoint.sh
 
-COPY ./backend/app /app/backend/app
-
-# Sync the project
-# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+# Финальная синхронизация с установкой пакета
 RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --package app
+    uv sync --no-dev --package app
+
+# ==============================================================================
+# Stage 3: production — минимальный финальный образ
+# ==============================================================================
+FROM python:3.10-slim AS production
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+# Создаём непривилегированного пользователя
+RUN groupadd --gid 1001 appgroup && \
+    useradd --uid 1001 --gid appgroup --shell /bin/sh --create-home appuser
 
 WORKDIR /app/backend/
 
-CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
+# Копируем только собранный venv и исходники
+COPY --from=builder --chown=appuser:appgroup /app/.venv /app/.venv
+COPY --from=builder --chown=appuser:appgroup /app/app ./app/
+COPY --from=builder --chown=appuser:appgroup /app/alembic.ini ./
+COPY --from=builder --chown=appuser:appgroup /app/scripts ./scripts/
+
+# ✅ Копируем entrypoint и делаем исполняемым
+COPY --from=builder --chown=appuser:appgroup /app/scripts/entrypoint.sh /app/backend/entrypoint.sh
+RUN chmod +x /app/backend/entrypoint.sh
+
+USER appuser
+
+EXPOSE 8000
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+
+# ✅ ENTRYPOINT вместо CMD — вся логика запуска в entrypoint.sh
+ENTRYPOINT ["/app/backend/entrypoint.sh"]
