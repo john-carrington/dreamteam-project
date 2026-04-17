@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 set -e
 
-# ✅ Убедимся, что корень проекта в PYTHONPATH
 export PYTHONPATH="${PYTHONPATH}:/app/backend"
 
 echo "🚀 Starting entrypoint..."
 
-# 🔄 Запустить подготовку БД (только если не скипнуто)
 if [[ "${SKIP_PRESTART:-}" != "true" ]]; then
     echo "⏳ Running prestart checks..."
     bash /app/backend/scripts/prestart.sh
 fi
 
-# 🎯 Запустить основное приложение (exec заменяет процесс, чтобы ловить сигналы)
-echo "🔥 Starting application..."
-exec fastapi run --workers 4 app/main.py --port 8000
+
+WORKERS="${WORKERS:-4}"
+WORKER_CLASS="${WORKER_CLASS:-uvicorn.workers.UvicornWorker}"
+BIND="${BIND:-0.0.0.0:8000}"
+LOG_LEVEL="${LOG_LEVEL:-info}"
+
+exec gunicorn "app.main:app" \
+    --workers "$WORKERS" \
+    --worker-class "$WORKER_CLASS" \
+    --bind "$BIND" \
+    --log-level "$LOG_LEVEL" \
