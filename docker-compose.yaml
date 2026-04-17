@@ -1,0 +1,10 @@
+services:
+  # postgres:
+  #   image: postgres:alpine3.22
+
+  fastapi:
+    container_name: fastapi
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
