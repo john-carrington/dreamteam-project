@@ -21,7 +21,6 @@ FROM base AS builder
 WORKDIR /app/
 
 # Сначала только файлы для разрешения зависимостей — слой кешируется
-# до изменения pyproject.toml / uv.lock
 COPY pyproject.toml ./
 
 # Устанавливаем только зависимости (без самого пакета)
@@ -32,6 +31,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY alembic.ini ./
 COPY app/ ./app/
 COPY scripts/ ./scripts/
+
+# ✅ Копируем entrypoint на стадии builder, чтобы он попал в финальный образ
+COPY scripts/entrypoint.sh ./scripts/entrypoint.sh
 
 # Финальная синхронизация с установкой пакета
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -52,18 +54,23 @@ RUN groupadd --gid 1001 appgroup && \
 
 WORKDIR /app/backend/
 
-# Копируем только собранный venv и исходники — без uv, кешей, build-мусора
+# Копируем только собранный venv и исходники
 COPY --from=builder --chown=appuser:appgroup /app/.venv /app/.venv
 COPY --from=builder --chown=appuser:appgroup /app/app ./app/
 COPY --from=builder --chown=appuser:appgroup /app/alembic.ini ./
 COPY --from=builder --chown=appuser:appgroup /app/scripts ./scripts/
 
+# ✅ Копируем entrypoint и делаем исполняемым
+COPY --from=builder --chown=appuser:appgroup /app/scripts/entrypoint.sh /app/backend/entrypoint.sh
+RUN chmod +x /app/backend/entrypoint.sh
+
 USER appuser
 
 EXPOSE 8000
 
-# Healthcheck — важен для оркестраторов (k8s, ECS, Docker Swarm)
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-CMD ["fastapi", "run", "--workers", "4", "app/main.py", "--port", "8000"]
+# ✅ ENTRYPOINT вместо CMD — вся логика запуска в entrypoint.sh
+ENTRYPOINT ["/app/backend/entrypoint.sh"]

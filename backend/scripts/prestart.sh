@@ -3,6 +3,9 @@
 set -e
 set -x
 
+# ✅ Добавляем корень проекта в PYTHONPATH
+export PYTHONPATH="${PYTHONPATH}:."
+
 # Let the DB start
 python app/backend_pre_start.py
 
