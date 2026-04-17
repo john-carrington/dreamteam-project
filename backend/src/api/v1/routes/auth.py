@@ -1,22 +1,20 @@
-# backend/src/api/v1/routes/auth.py
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, status, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, Form, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pwdlib import PasswordHash
 from sqlalchemy import select
-
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.core.security import TokenService, get_password_hash
 from src.models import User
 from src.schemas import (
-    UserResponseModel,
-    RegistrationRequestModel,
     LoginRequestModel,
-    TokensModel,
     RefreshRequest,
+    RegistrationRequestModel,
+    TokensModel,
+    UserResponseModel,
 )
-from pwdlib import PasswordHash
 
 auth_router = APIRouter()
 auth_scheme = HTTPBearer()
