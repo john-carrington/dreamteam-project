@@ -21,6 +21,7 @@ auth_scheme = HTTPBearer()
 
 @auth_router.post("/register/",
           description="Registration for new users.",
+          response_model=UserResponseModel,
           status_code=status.HTTP_201_CREATED)
 async def register(user_data: Annotated[RegistrationRequestModel, Form()],
                    password_hash: Annotated[PasswordHash, Depends(get_password_hash)],
@@ -35,8 +36,9 @@ async def register(user_data: Annotated[RegistrationRequestModel, Form()],
     
     password = user_data.password
     hashed_password = password_hash.hash(password)
-    await db.create_user(user_data.email, hashed_password,
-                         user_data.name, user_data.surname)
+    new_user = await db.create_user(user_data.email, hashed_password,
+                                user_data.name, user_data.surname)
+    return new_user
     
 
 @auth_router.post("/login/",
@@ -50,10 +52,10 @@ async def login(user_data: Annotated[LoginRequestModel, Form()],
     current_user = await db.get_user(user_data.email)
 
     if current_user is None:
-        fake_hash= "fake hash"
+        fake_hash = password_hash.hash("dummypassword")
         password_hash.verify(user_data.password, fake_hash)
         success_login = False
-    if not password_hash.verify(user_data.password, current_user.password):
+    elif not password_hash.verify(user_data.password, current_user.password):
         success_login = False
 
     if not success_login:
@@ -84,6 +86,6 @@ async def get_user(authorization_data: Annotated[HTTPAuthorizationCredentials, D
              response_model=TokensModel,
              status_code=status.HTTP_200_OK)
 async def refresh_token(data: RefreshRequest):
-    token_pair = TokenService.refresh(data.refresh_token)
+    token_pair = TokenService.refresh_token(data.refresh_token)
     token_pair.update({"token_type": "bearer"})
     return token_pair

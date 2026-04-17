@@ -3,12 +3,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pwdlib import PasswordHash
 from argparse import ArgumentParser
+from dotenv import load_dotenv
+from os import getenv
 
 from auth.auth import auth_router
 from db.Database import Database
 
 
-API_PREFIX = "/api/v1"
+load_dotenv()
+
+
+API_PREFIX = getenv("API_PREFIX", "/")
 
 
 @asynccontextmanager

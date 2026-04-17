@@ -63,19 +63,23 @@ class Database:
     
     async def create_object(self, object):
         if self.__is_sync:
-            self.__create_sync(object)
+            return self.__create_sync(object)
         else:
-            self.__create_async(object)
+            return await self.__create_async(object)
 
     def __create_sync(self, object):
         with self.__session() as session:
             session.add(object)
             session.commit()
+            session.refresh(object)
+            return object
 
     async def __create_async(self, object):
         async with self.__session() as session:
             session.add(object)
             await session.commit()
+            await session.refresh(object)
+            return object
     
     @staticmethod
     def __get_user_query(value: str):
@@ -89,4 +93,4 @@ class Database:
     
     async def create_user(self, email: str, password: str, name: str, surname: str):
         new_user = User(email=email, password=password, name=name, surname=surname)
-        await self.create_object(new_user)
+        return await self.create_object(new_user)

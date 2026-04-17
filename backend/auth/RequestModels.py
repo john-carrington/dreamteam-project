@@ -61,7 +61,6 @@ class UserResponseModel(BaseModel):
     name: str
     surname: str
     email: str
-    password: str
 
 
 class RefreshRequest(BaseModel):
