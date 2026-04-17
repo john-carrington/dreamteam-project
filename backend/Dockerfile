@@ -1,28 +1,45 @@
-FROM python:3.12-alpine3.21 AS builder
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+FROM python:3.10
 
-WORKDIR /app
+ENV PYTHONUNBUFFERED=1
 
-RUN apk add --no-cache build-base
+# Install uv
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=ghcr.io/astral-sh/uv:0.9.26 /uv /uvx /bin/
 
-COPY pyproject.toml .
-RUN uv sync --no-cache --no-dev --python 3.12
+# Compile bytecode
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#compiling-bytecode
+ENV UV_COMPILE_BYTECODE=1
 
-FROM python:3.12-alpine3.21
+# uv Cache
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#caching
+ENV UV_LINK_MODE=copy
 
-WORKDIR /app
+WORKDIR /app/
 
-COPY --from=builder /app/.venv .venv
+# Place executables in the environment at the front of the path
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
 ENV PATH="/app/.venv/bin:$PATH"
 
-COPY  . .
+# Install dependencies
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-workspace --package app
 
-COPY entrypoint.sh ./
+COPY ./backend/scripts /app/backend/scripts
 
-HEALTHCHECK --interval=1s --timeout=5s --retries=10 \
-  CMD wget --no-verbose --tries=1 --spider http://0.0.0.0:8000/api/health
+COPY ./backend/pyproject.toml ./backend/alembic.ini /app/backend/
 
-EXPOSE 8000
+COPY ./backend/app /app/backend/app
 
-ENTRYPOINT ["sh", "./entrypoint.sh"]
+# Sync the project
+# Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --package app
 
+WORKDIR /app/backend/
+
+CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
