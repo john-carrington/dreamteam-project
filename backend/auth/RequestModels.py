@@ -49,7 +49,7 @@ class LoginRequestModel(BaseModel):
     password: str
 
 
-class LoginResponseModel(BaseModel):
+class TokensModel(BaseModel):
 
     access_token: str
     refresh_token: str
@@ -62,3 +62,7 @@ class UserResponseModel(BaseModel):
     surname: str
     email: str
     password: str
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str

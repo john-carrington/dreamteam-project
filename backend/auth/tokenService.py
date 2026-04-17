@@ -74,7 +74,7 @@ class TokenService:
             )
 
     @staticmethod
-    def refresh_token(token: str) -> str:
+    def refresh_token(token: str) -> dict[str, str]:
         sub = TokenService.decode_token(token, type="refresh")
-        new_access_token = TokenService.create_token(sub)
-        return new_access_token
+        tokens = TokenService.get_token_pair(sub)
+        return tokens

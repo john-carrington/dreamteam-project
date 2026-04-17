@@ -5,7 +5,7 @@ from pwdlib import PasswordHash
 
 from auth.tokenService import TokenService
 from db.Database import Database
-from auth.RequestModels import RegistrationRequestModel, LoginRequestModel, LoginResponseModel, UserResponseModel
+from auth.RequestModels import RegistrationRequestModel, LoginRequestModel, TokensModel, UserResponseModel, RefreshRequest
 
 
 async def get_password_hash(request: Request):
@@ -41,7 +41,7 @@ async def register(user_data: Annotated[RegistrationRequestModel, Form()],
 
 @auth_router.post("/login/",
           description="Login with password and username",
-          response_model=LoginResponseModel,
+          response_model=TokensModel,
           status_code=status.HTTP_200_OK)
 async def login(user_data: Annotated[LoginRequestModel, Form()],
                 password_hash: Annotated[PasswordHash, Depends(get_password_hash)],
@@ -81,7 +81,9 @@ async def get_user(authorization_data: Annotated[HTTPAuthorizationCredentials, D
 
 @auth_router.post("/refresh/",
              description="Refresh token.",
-             response_model=LoginResponseModel,
+             response_model=TokensModel,
              status_code=status.HTTP_200_OK)
-async def refresh_token():
-    pass
+async def refresh_token(data: RefreshRequest):
+    token_pair = TokenService.refresh(data.refresh_token)
+    token_pair.update({"token_type": "bearer"})
+    return token_pair
