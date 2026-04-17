@@ -72,7 +72,7 @@ export default function App() {
       <div className="min-h-screen bg-background text-text flex items-center justify-center">
         <div className="text-center">
           <p className="text-sm uppercase tracking-[3px] text-text-muted">Naumen Expertise</p>
-          <p className="mt-3 text-lg font-[Georgia] italic">Проверяем сессию...</p>
+          <p className="mt-3 text-lg font-semibold italic">Проверяем сессию...</p>
         </div>
       </div>
     );

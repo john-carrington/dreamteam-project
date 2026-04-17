@@ -23,7 +23,7 @@ export function LeaderboardPage({ onUserClick }: { onUserClick: (id: string) => 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 pb-20">
       <div className="text-center space-y-2">
-        <h2 className="text-4xl font-[Georgia] italic text-text">Лидерборд Экспертов</h2>
+        <h2 className="text-4xl font-semibold italic text-text">Лидерборд Экспертов</h2>
         <p className="text-text-muted text-sm">Участвуйте в развитии компании и получайте признание коллег!</p>
       </div>
 
@@ -68,7 +68,7 @@ export function LeaderboardPage({ onUserClick }: { onUserClick: (id: string) => 
               <img src={user.avatar} alt={user.name} className="w-14 h-14 rounded-full border border-border" />
               
               <div className="flex-1">
-                <h3 className="text-lg font-[Georgia] italic text-text flex items-center gap-2">
+                <h3 className="text-lg font-semibold italic text-text flex items-center gap-2">
                   {user.name}
                   {user.badges.map(b => (
                     <Badge key={b} variant="secondary" className="text-[10px] h-5"><Star className="w-3 h-3 mr-1 text-accent"/>{b}</Badge>
@@ -78,7 +78,7 @@ export function LeaderboardPage({ onUserClick }: { onUserClick: (id: string) => 
               </div>
 
               <div className="text-right">
-                <div className="text-2xl font-[Georgia] italic focus:outline-none text-success">{score}</div>
+                <div className="text-2xl font-semibold italic focus:outline-none text-success">{score}</div>
                 <div className="text-[10px] font-bold text-text-muted uppercase tracking-[1px]">баллов</div>
               </div>
             </div>

@@ -39,7 +39,7 @@ export function Dashboard({ onNavigate, onUserClick }: { onNavigate: (v: string)
   return (
     <div className="p-8 space-y-8 pb-20">
       <div>
-        <h2 className="text-3xl font-[Georgia] italic text-text">Дашборд</h2>
+        <h2 className="text-3xl font-semibold italic text-text">Дашборд</h2>
         <p className="text-text-muted mt-2 text-sm">Аналитика по экспертизе сотрудников и лидерборд.</p>
       </div>
 
@@ -49,7 +49,7 @@ export function Dashboard({ onNavigate, onUserClick }: { onNavigate: (v: string)
             <CardTitle className="text-[11px] uppercase tracking-widest text-text-muted">Готовы выступать (Спикеры)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-[Georgia] italic text-text">{analyticsData.readyToSpeak}</div>
+            <div className="text-3xl font-semibold italic text-text">{analyticsData.readyToSpeak}</div>
           </CardContent>
         </Card>
         <Card>
@@ -57,7 +57,7 @@ export function Dashboard({ onNavigate, onUserClick }: { onNavigate: (v: string)
             <CardTitle className="text-[11px] uppercase tracking-widest text-text-muted">Готовы менторить</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-[Georgia] italic text-text">{analyticsData.readyToMentor}</div>
+            <div className="text-3xl font-semibold italic text-text">{analyticsData.readyToMentor}</div>
           </CardContent>
         </Card>
         <Card className="bg-surface-light border-border">

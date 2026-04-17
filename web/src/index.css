@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -9,8 +10,8 @@
   --color-border: #2A2A2A;
   --color-text: #FFFFFF;
   --color-text-muted: #888888;
-  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
-  --font-display: "Georgia", serif;
+  --font-sans: "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Roboto", "Helvetica Neue", Arial, sans-serif;
 }
 
 body {

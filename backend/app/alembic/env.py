@@ -12,6 +12,7 @@ from app.core.db import Base
 
 # ✅ 3. Потом импортируем ВСЕ модели, чтобы они зарегистрировались в Base.metadata
 # Это обязательно для работы --autogenerate
+from app.models.expertise import ExpertiseProfile, Invitation, Skill, SkillEndorsement  # noqa: F401
 from app.models.users import User  # noqa: F401
 
 # from app.models.other import OtherModel  # добавляйте новые модели сюда

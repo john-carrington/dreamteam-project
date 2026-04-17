@@ -106,7 +106,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             className="max-w-xl"
           >
             <p className="text-xs uppercase tracking-[4px] text-text-muted">Naumen Expertise Map</p>
-            <h1 className="mt-5 text-5xl leading-tight font-[Georgia] italic">
+            <h1 className="mt-5 text-5xl leading-tight font-semibold italic">
               Внутренняя карта экспертизы
               <br />
               для команд роста
@@ -139,7 +139,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
           >
             <Card className="border-border bg-surface/95 backdrop-blur">
               <CardHeader>
-                <CardTitle className="text-2xl font-[Georgia] italic text-center">Вход в систему</CardTitle>
+                <CardTitle className="text-2xl font-semibold italic text-center">Вход в систему</CardTitle>
                 <CardDescription className="text-center text-sm">
                   Авторизуйтесь или создайте новый аккаунт
                 </CardDescription>

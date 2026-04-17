@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useMockData } from '@/store/MockDataContext';
 import { Users, Search, Home, User as UserIcon, Medal, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -11,8 +11,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentPath, onNavigate, onLogout }: SidebarProps) {
-  const { users, currentUser, setCurrentUser } = useMockData();
-  const [isAccountMenuOpen, setAccountMenuOpen] = useState(false);
+  const { currentUser, loading } = useMockData();
 
   const navItems = [
     { name: 'Дашборд', path: 'dashboard', icon: Home, visibleFor: 'all' },
@@ -57,26 +56,11 @@ export function Sidebar({ currentPath, onNavigate, onLogout }: SidebarProps) {
           />
           <div className="flex-1 overflow-hidden">
             <p className="text-sm font-medium text-text truncate">{currentUser?.name}</p>
-            <p className="text-xs text-text-muted truncate">{currentUser?.title}</p>
+            <p className="text-xs text-text-muted truncate">{currentUser?.title || 'Профиль в процессе заполнения'}</p>
           </div>
         </div>
-        <div className="mt-4">
-          <label className="text-[11px] font-[600] text-text-muted uppercase tracking-[1px]">Сменить (Демо)</label>
-          <select 
-            className="mt-1 w-full text-sm rounded-[4px] border-border p-2 border bg-background text-text focus:outline-none focus:ring-2 focus:ring-accent transition-colors"
-            value={currentUser?.id}
-            onChange={(e) => {
-              const u = users.find(x => x.id === e.target.value);
-              if (u) setCurrentUser(u);
-            }}
-          >
-            {users.map(u => (
-              <option key={u.id} value={u.id}>{u.name} ({u.department})</option>
-            ))}
-          </select>
-        </div>
 
-        <Button variant="outline" className="mt-4 w-full" onClick={onLogout}>
+        <Button variant="outline" className="mt-4 w-full" onClick={onLogout} disabled={loading}>
           <LogOut className="w-4 h-4 mr-2" /> ВЫЙТИ
         </Button>
       </div>

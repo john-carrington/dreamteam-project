@@ -81,7 +81,7 @@ async def reset_password(session: SessionDep, body: NewPassword) -> Message:
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     user_in_update = UserUpdate(password=body.new_password)
-    await User.update(session=session, db_user=user, user_in=user_in_update)
+    await user.update(session=session, user_in=user_in_update)
     return Message(message="Password updated successfully")
 
 
