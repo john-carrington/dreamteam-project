@@ -1,6 +1,5 @@
 import os
 from logging.config import fileConfig
-
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
@@ -19,8 +18,8 @@ fileConfig(config.config_file_name)
 # target_metadata = mymodel.Base.metadata
 # target_metadata = None
 
-from app.models import SQLModel  # noqa
-from app.core.config import settings # noqa
+from sqlmodel import SQLModel  # noqa
+from app.core.config import settings  # noqa
 
 target_metadata = SQLModel.metadata
 
