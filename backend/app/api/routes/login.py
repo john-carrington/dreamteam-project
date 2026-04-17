@@ -5,12 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
 from app.core.config import settings
 from app.models.security import Message, NewPassword, Token
-from app.models.user import UserPublic, UserUpdate
+from app.models.users import User
+from app.schemas.user import UserPublic, UserUpdate
 from app.utils import (
     generate_password_reset_token,
     generate_reset_password_email,
@@ -27,7 +27,7 @@ async def login_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
     """OAuth2 compatible token login, get an access token for future requests."""
-    user = await crud.authenticate(
+    user = await User.authenticate(
         session=session, email=form_data.username, password=form_data.password
     )
     if not user:
@@ -51,7 +51,7 @@ async def test_token(current_user: CurrentUser) -> Any:
 @router.post("/password-recovery/{email}")
 async def recover_password(email: str, session: SessionDep) -> Message:
     """Password Recovery."""
-    user = await crud.get_user_by_email(session=session, email=email)
+    user = await User.get_by_email(session=session, email=email)
 
     # Всегда возвращаем один и тот же ответ для защиты от email enumeration
     if user:
@@ -75,13 +75,13 @@ async def reset_password(session: SessionDep, body: NewPassword) -> Message:
     email = verify_password_reset_token(token=body.token)
     if not email:
         raise HTTPException(status_code=400, detail="Invalid token")
-    user = await crud.get_user_by_email(session=session, email=email)
+    user = await User.get_by_email(session=session, email=email)
     if not user:
         raise HTTPException(status_code=400, detail="Invalid token")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     user_in_update = UserUpdate(password=body.new_password)
-    await crud.update_user(session=session, db_user=user, user_in=user_in_update)
+    await User.update(session=session, db_user=user, user_in=user_in_update)
     return Message(message="Password updated successfully")
 
 
@@ -92,7 +92,7 @@ async def reset_password(session: SessionDep, body: NewPassword) -> Message:
 )
 async def recover_password_html_content(email: str, session: SessionDep) -> Any:
     """HTML Content for Password Recovery."""
-    user = await crud.get_user_by_email(session=session, email=email)
+    user = await User.get_by_email(session=session, email=email)
     if not user:
         raise HTTPException(
             status_code=404,

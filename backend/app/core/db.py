@@ -5,13 +5,11 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
-from sqlmodel import select
 
-from app import crud
 from app.core.config import settings
-from app.models.user import User, UserCreate
 
 
+# ✅ Base должен быть определён ДО любых импортов моделей
 class Base(AsyncAttrs, DeclarativeBase):
     """Базовый класс для декларативных моделей SQLAlchemy."""
 
@@ -31,6 +29,16 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def init_db(session: AsyncSession) -> None:
+    """
+    Инициализация БД: создание суперпользователя.
+
+    ✅ Импортируем модели ВНУТРИ функции, чтобы избежать циклического импорта.
+    """
+    # Локальный импорт — разрывает цикл
+    from sqlmodel import select
+
+    from app.models.users import User, UserCreate
+
     result = await session.execute(
         select(User).where(User.email == settings.FIRST_SUPERUSER)
     )
@@ -41,4 +49,4 @@ async def init_db(session: AsyncSession) -> None:
             password=settings.FIRST_SUPERUSER_PASSWORD,
             is_superuser=True,
         )
-        user = await crud.create_user(session=session, user_create=user_in)
+        user = await User.create(session=session, user_create=user_in)

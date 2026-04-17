@@ -4,7 +4,6 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, func, select
 
-from app import crud
 from app.api.deps import (
     CurrentUser,
     SessionDep,
@@ -13,9 +12,9 @@ from app.api.deps import (
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models.security import Message
-from app.models.user import (
+from app.models.users import User
+from app.schemas.user import (
     UpdatePassword,
-    User,
     UserCreate,
     UserPublic,
     UserRegister,
@@ -54,13 +53,13 @@ async def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> An
 )
 async def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
     """Create new user."""
-    user = await crud.get_user_by_email(session=session, email=user_in.email)
+    user = await User.get_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system.",
         )
-    user = await crud.create_user(session=session, user_create=user_in)
+    user = await User.create(session=session, user_create=user_in)
     if settings.emails_enabled and user_in.email:
         email_data = generate_new_account_email(
             email_to=user_in.email, username=user_in.email, password=user_in.password
@@ -79,9 +78,7 @@ async def update_user_me(
 ) -> Any:
     """Update own user."""
     if user_in.email:
-        existing_user = await crud.get_user_by_email(
-            session=session, email=user_in.email
-        )
+        existing_user = await User.get_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != current_user.id:
             raise HTTPException(
                 status_code=409, detail="User with this email already exists"
@@ -134,14 +131,14 @@ async def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 @router.post("/signup", response_model=UserPublic)
 async def register_user(session: SessionDep, user_in: UserRegister) -> Any:
     """Create new user without the need to be logged in."""
-    user = await crud.get_user_by_email(session=session, email=user_in.email)
+    user = await User.get_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
             status_code=400,
             detail="The user with this email already exists in the system",
         )
-    user_create = UserCreate.model_validate(user_in)
-    user = await crud.create_user(session=session, user_create=user_create)
+    user_create = UserCreate.model_validate(user_in.model_dump())
+    user = await User.create(session=session, user_create=user_create)
     return user
 
 
@@ -182,14 +179,12 @@ async def update_user(
             detail="The user with this id does not exist in the system",
         )
     if user_in.email:
-        existing_user = await crud.get_user_by_email(
-            session=session, email=user_in.email
-        )
+        existing_user = await User.get_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != user_id:
             raise HTTPException(
                 status_code=409, detail="User with this email already exists"
             )
-    db_user = await crud.update_user(session=session, db_user=db_user, user_in=user_in)
+    db_user = await db_user.update(session=session, user_in=user_in)
     return db_user
 
 
